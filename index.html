@@ -1,0 +1,1921 @@
+<!DOCTYPE html>
+<html lang="uz" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OB-HAVO.UZ | Jonli Ob-havo, Shamol va Yog'ingarchilik Radari</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Space Grotesk -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                    },
+                    colors: {
+                        glass: 'rgba(15, 23, 42, 0.62)',
+                        glassBorder: 'rgba(255, 255, 255, 0.12)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(56, 189, 248, 0.4) rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(56, 189, 248, 0.45);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(56, 189, 248, 0.8);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            background-color: #060b19;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            transition: background 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Dynamic Sky Gradient Layer behind Canvas */
+        #sky-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            transition: background 1.5s ease;
+            background: radial-gradient(circle at 80% 15%, rgba(56, 189, 248, 0.22), transparent 50%),
+                        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.18), transparent 55%),
+                        linear-gradient(180deg, #071126 0%, #0b1d3a 55%, #0f172a 100%);
+        }
+
+        /* Fullscreen Weather Particle Canvas */
+        #weather-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Lightning Flash Overlay */
+        #lightning-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: rgba(224, 242, 254, 0.85);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.08s ease-out;
+        }
+
+        /* Glassmorphism Cards */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.58);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(56, 189, 248, 0.32);
+            box-shadow: 0 25px 60px rgba(2, 132, 199, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+        }
+
+        .glass-pill {
+            background: rgba(30, 41, 59, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.25s ease;
+        }
+        .glass-pill:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: rgba(56, 189, 248, 0.5);
+            transform: translateY(-2px);
+        }
+        .glass-pill.active-pill {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.85), rgba(79, 70, 229, 0.85));
+            border-color: rgba(125, 211, 252, 0.8);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.45);
+        }
+
+        /* Glowing Text */
+        .glow-temp {
+            text-shadow: 0 0 40px rgba(56, 189, 248, 0.45);
+        }
+
+        /* Wind Turbine Rotation */
+        @keyframes spinTurbine {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .turbine-blades {
+            transform-origin: 50px 50px;
+            animation: spinTurbine var(--turbine-duration, 3s) linear infinite;
+        }
+
+        /* Floating Weather Icon Animation */
+        @keyframes floatSlow {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-7px) scale(1.03); }
+        }
+        .animate-float {
+            animation: floatSlow 4s ease-in-out infinite;
+        }
+
+        /* Radar Pulse */
+        @keyframes radarPing {
+            0% { transform: scale(0.8); opacity: 0.9; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+        .radar-dot::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: radarPing 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+
+        /* Shimmer loading state */
+        .shimmer {
+            background: linear-gradient(90deg, rgba(30,41,59,0.4) 25%, rgba(51,65,85,0.6) 50%, rgba(30,41,59,0.4) 75%);
+            background-size: 200% 100%;
+            animation: shimmerAnim 1.5s infinite;
+        }
+        @keyframes shimmerAnim {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen selection:bg-sky-500 selection:text-white">
+
+    <!-- Dynamic Sky Background & Particle Canvas -->
+    <div id="sky-backdrop"></div>
+    <div id="lightning-overlay"></div>
+    <canvas id="weather-canvas"></canvas>
+
+    <!-- Toast Notification Box (No alert() used) -->
+    <div id="toast-box" class="fixed top-5 right-5 z-50 transform translate-x-full opacity-0 transition-all duration-300 max-w-sm glass-card rounded-2xl p-4 flex items-center gap-3 border-l-4 border-sky-400 pointer-events-none">
+        <div id="toast-icon" class="w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0">
+            <i class="fa-solid fa-circle-info"></i>
+        </div>
+        <div>
+            <p id="toast-title" class="text-xs font-bold uppercase tracking-wider text-sky-300">Ma'lumot</p>
+            <p id="toast-msg" class="text-sm text-slate-200 font-medium">Shahar ma'lumotlari yangilandi</p>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 space-y-6">
+
+        <!-- TOP HEADER: Brand, Search, Audio & Live Simulator -->
+        <header class="glass-card rounded-3xl p-4 sm:p-6 space-y-5">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                
+                <!-- Brand Logo -->
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3.5">
+                        <div class="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-sky-500/30">
+                            <i class="fa-solid fa-cloud-bolt text-2xl text-white"></i>
+                            <span class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-900 radar-dot text-emerald-400"></span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h1 class="font-display font-bold text-xl sm:text-2xl tracking-tight bg-gradient-to-r from-white via-sky-200 to-indigo-200 bg-clip-text text-transparent">
+                                    OB-HAVO.UZ
+                                </h1>
+                                <span class="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                                    LIVE RADAR
+                                </span>
+                            </div>
+                            <p class="text-xs text-slate-400">Shamol tezligi, Yomg'ir va Qor yog'ish vaqti aniq prognozi</p>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Sound Button -->
+                    <button id="sound-toggle-mobile" onclick="toggleAmbientSound()" class="lg:hidden glass-pill px-3.5 py-2.5 rounded-xl flex items-center gap-2 text-xs font-semibold text-slate-200">
+                        <i id="sound-icon-mobile" class="fa-solid fa-volume-xmark text-slate-400"></i>
+                        <span>Ovoz</span>
+                    </button>
+                </div>
+
+                <!-- Search Bar & GPS & Sound Controls -->
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1 max-w-2xl">
+                    <!-- Search Input with Autocomplete Dropdown -->
+                    <div class="relative flex-1">
+                        <div class="relative flex items-center">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 text-sky-400 text-sm pointer-events-none"></i>
+                            <input 
+                                id="city-search-input" 
+                                type="text" 
+                                autocomplete="off"
+                                placeholder="Shahar yoki tuman nomini yozing (masalan: Toshkent, Qo'qon, Seul)..."
+                                class="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-900/80 border border-slate-700/70 focus:border-sky-400 focus:ring-2 focus:ring-sky-400/25 text-sm text-white placeholder-slate-400 outline-none transition"
+                            >
+                            <button id="clear-search-btn" onclick="clearSearchInput()" class="hidden absolute right-3 text-slate-400 hover:text-white p-1">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Autocomplete Dropdown -->
+                        <div id="search-dropdown" class="hidden absolute left-0 right-0 mt-2 glass-card rounded-2xl overflow-hidden z-50 border border-sky-500/30 divide-y divide-slate-800/80 max-h-72 overflow-y-auto">
+                            <!-- Dynamically populated -->
+                        </div>
+                    </div>
+
+                    <!-- GPS Button -->
+                    <button onclick="detectUserLocation()" class="glass-pill px-4 py-3 rounded-2xl flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-sky-300 hover:text-white shrink-0 group">
+                        <i class="fa-solid fa-location-crosshairs text-sky-400 group-hover:rotate-90 transition-transform duration-300"></i>
+                        <span>Mening joylashuvim</span>
+                    </button>
+
+                    <!-- Desktop Ambient Audio Synthesizer Toggle -->
+                    <button id="sound-toggle-btn" onclick="toggleAmbientSound()" class="hidden lg:flex glass-pill px-4 py-3 rounded-2xl items-center gap-2.5 text-xs font-semibold text-slate-200 shrink-0" title="Yomg'ir va shamol tabiiy ovozini yoqish">
+                        <i id="sound-icon" class="fa-solid fa-volume-xmark text-slate-400 text-sm"></i>
+                        <span id="sound-label">Tabiat ovozi: O'chiq</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Select Cities Row -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1.5 pt-1 no-scrollbar">
+                <span class="text-xs font-semibold text-slate-400 shrink-0 flex items-center gap-1.5 mr-1">
+                    <i class="fa-solid fa-map-pin text-sky-400"></i> Tezkor shaharlar:
+                </span>
+                <div id="quick-cities-container" class="flex items-center gap-2">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- Interactive Weather Animation Simulator Bar -->
+            <div class="pt-3 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-sky-300">
+                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Ob-havo Effektlari Simulyatori:
+                    </span>
+                    <span class="text-xs text-slate-400 hidden md:inline">(Animatsiyalarni jonli sinab ko'ring)</span>
+                </div>
+                <div class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0" id="simulator-buttons">
+                    <button onclick="setSimulationMode('auto')" data-mode="auto" class="sim-btn glass-pill active-pill px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-satellite-dish"></i> Avto (Real)
+                    </button>
+                    <button onclick="setSimulationMode('sunny')" data-mode="sunny" class="sim-btn glass-pill px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-sun text-amber-400"></i> Quyoshli
+                    </button>
+                    <button onclick="setSimulationMode('rain')" data-mode="rain" class="sim-btn glass-pill px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-cloud-rain text-sky-400"></i> Yomg'ir
+                    </button>
+                    <button onclick="setSimulationMode('storm')" data-mode="storm" class="sim-btn glass-pill px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-cloud-bolt text-yellow-400"></i> Jala va Chaqmoq
+                    </button>
+                    <button onclick="setSimulationMode('snow')" data-mode="snow" class="sim-btn glass-pill px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0">
+                        <i class="fa-regular fa-snowflake text-cyan-200"></i> Qor Bo'roni
+                    </button>
+                    <button onclick="setSimulationMode('wind')" data-mode="wind" class="sim-btn glass-pill px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-wind text-emerald-400"></i> Kuchli Shamol
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- SMART AI PRECIPITATION ALERT BANNER (Qachon yomg'ir yoki qor yog'adi?) -->
+        <section id="precip-alert-banner" class="glass-card rounded-3xl p-5 sm:p-6 border-l-4 border-l-sky-400 relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 w-44 h-44 bg-sky-500/10 rounded-full blur-2xl pointer-events-none"></div>
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div class="flex items-start sm:items-center gap-4">
+                    <div id="precip-alert-icon-box" class="w-14 h-14 rounded-2xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-2xl text-sky-300 shrink-0 shadow-lg shadow-sky-500/10">
+                        <i class="fa-solid fa-cloud-showers-heavy animate-bounce"></i>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="text-xs font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-md bg-sky-500/20 text-sky-300 border border-sky-400/30">
+                                Yog'ingarchilik Radari Tahlili
+                            </span>
+                            <span id="precip-status-badge" class="text-xs font-semibold text-emerald-300">
+                                • Jonli kuzatuvda
+                            </span>
+                        </div>
+                        <h2 id="precip-headline" class="text-base sm:text-xl font-bold text-white">
+                            Yog'ingarchilik ma'lumotlari tahlil qilinmoqda...
+                        </h2>
+                        <p id="precip-subtext" class="text-xs sm:text-sm text-slate-300">
+                            Keyingi 24 soat va 7 kunlik yomg'ir hamda qor ehtimoli hisoblanmoqda.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Quick Summary Pills for Next 24h Rain/Snow & Max Wind -->
+                <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 shrink-0">
+                    <div class="bg-slate-900/75 border border-slate-700/70 rounded-2xl px-4 py-2.5 min-w-[130px]">
+                        <p class="text-[11px] text-slate-400 uppercase font-semibold">24s Yomg'ir/Qor</p>
+                        <p id="banner-24h-precip" class="text-base font-display font-bold text-sky-300">-- mm</p>
+                    </div>
+                    <div class="bg-slate-900/75 border border-slate-700/70 rounded-2xl px-4 py-2.5 min-w-[130px]">
+                        <p class="text-[11px] text-slate-400 uppercase font-semibold">Maks. Ehtimollik</p>
+                        <p id="banner-24h-prob" class="text-base font-display font-bold text-indigo-300">--%</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN HERO GRID: Left = Current Weather Hero, Right = Wind Dynamics & Compass -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT 7 COLS: CURRENT WEATHER HERO CARD -->
+            <div class="lg:col-span-7 glass-card rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative overflow-hidden">
+                <!-- Ambient decorative glow -->
+                <div class="absolute -top-24 -right-24 w-72 h-72 bg-sky-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+                <!-- Top Row: City Info & Live Local Clock -->
+                <div class="flex flex-wrap items-start justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-solid fa-location-dot text-sky-400 text-xl"></i>
+                            <h2 id="current-city-name" class="font-display font-bold text-2xl sm:text-4xl text-white tracking-tight">
+                                Toshkent
+                            </h2>
+                            <span id="day-night-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30">
+                                Kunduz
+                            </span>
+                        </div>
+                        <p id="current-region-coords" class="text-xs sm:text-sm text-slate-400 mt-1">
+                            O'zbekiston • 41.30° N, 69.24° E
+                        </p>
+                    </div>
+
+                    <div class="text-right bg-slate-900/60 border border-slate-700/60 rounded-2xl px-4 py-2">
+                        <div id="live-clock" class="font-display font-bold text-lg sm:text-xl text-sky-300 tracking-wider">
+                            --:--:--
+                        </div>
+                        <div id="live-date" class="text-[11px] text-slate-400 font-medium">
+                            Payshanba, 22-Oktabr
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Middle Row: Giant Temperature & Animated SVG Weather Illustration -->
+                <div class="my-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                    <div class="flex items-center gap-5">
+                        <div id="hero-weather-svg" class="w-24 h-24 sm:w-28 sm:h-28 shrink-0 animate-float flex items-center justify-center">
+                            <!-- Dynamic SVG injected here -->
+                        </div>
+                        <div>
+                            <div class="flex items-start">
+                                <span id="current-temp" class="font-display font-extrabold text-6xl sm:text-7xl lg:text-8xl tracking-tighter text-white glow-temp">
+                                    --
+                                </span>
+                                <span class="font-display text-3xl sm:text-4xl font-bold text-sky-400 mt-2">°C</span>
+                            </div>
+                            <p id="current-condition-text" class="text-lg sm:text-xl font-semibold text-sky-200 mt-1">
+                                Ma'lumot yuklanmoqda...
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Feels Like & Min/Max Box -->
+                    <div class="bg-slate-900/65 border border-slate-800 rounded-2xl p-4 space-y-2.5 min-w-[200px]">
+                        <div class="flex items-center justify-between text-xs sm:text-sm">
+                            <span class="text-slate-400"><i class="fa-solid fa-temperature-half text-sky-400 mr-1.5"></i>His qilinishi:</span>
+                            <span id="current-feels-like" class="font-bold text-white">--°C</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs sm:text-sm">
+                            <span class="text-slate-400"><i class="fa-solid fa-arrow-up text-rose-400 mr-1.5"></i>Eng yuqori (Max):</span>
+                            <span id="current-temp-max" class="font-bold text-rose-300">--°C</span>
+                        </div>
+                        <div class="flex items-center justify-between text-xs sm:text-sm">
+                            <span class="text-slate-400"><i class="fa-solid fa-arrow-down text-cyan-400 mr-1.5"></i>Eng past (Min):</span>
+                            <span id="current-temp-min" class="font-bold text-cyan-300">--°C</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: 4 Instant Highlight Pills (Current Rain, Snow, Cloud Cover, Humidity) -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-slate-800/80">
+                    <div class="bg-slate-900/50 rounded-2xl p-3 border border-slate-800/80 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-sky-500/15 text-sky-400 flex items-center justify-center text-lg shrink-0">
+                            <i class="fa-solid fa-droplet"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-slate-400">Hozirgi yomg'ir</p>
+                            <p id="instant-rain" class="text-sm font-bold text-white">0.0 mm</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/50 rounded-2xl p-3 border border-slate-800/80 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center text-lg shrink-0">
+                            <i class="fa-regular fa-snowflake"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-slate-400">Hozirgi qor</p>
+                            <p id="instant-snow" class="text-sm font-bold text-white">0.0 sm</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/50 rounded-2xl p-3 border border-slate-800/80 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center text-lg shrink-0">
+                            <i class="fa-solid fa-cloud"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-slate-400">Bulutlilik</p>
+                            <p id="instant-clouds" class="text-sm font-bold text-white">--%</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900/50 rounded-2xl p-3 border border-slate-800/80 flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center text-lg shrink-0">
+                            <i class="fa-solid fa-water"></i>
+                        </div>
+                        <div>
+                            <p class="text-[11px] text-slate-400">Havo namligi</p>
+                            <p id="instant-humidity" class="text-sm font-bold text-white">--%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT 5 COLS: DEDICATED WIND SPEED, TURBINE & COMPASS CARD -->
+            <div class="lg:col-span-5 glass-card rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative overflow-hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-wind"></i> Aerodinamik Monitor
+                        </span>
+                        <h3 class="font-display font-bold text-xl text-white mt-0.5">
+                            Shamol Tezligi va Kompasi
+                        </h3>
+                    </div>
+                    <span id="beaufort-badge" class="text-xs font-bold px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        Mayin shabada
+                    </span>
+                </div>
+
+                <!-- Center Visual: Interactive Wind Compass + Animated Wind Turbine -->
+                <div class="my-5 grid grid-cols-2 gap-4 items-center">
+                    
+                    <!-- 3D-Style SVG Wind Compass -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-36 h-36 sm:w-40 sm:h-40 flex items-center justify-center">
+                            <!-- Outer Compass Ring SVG -->
+                            <svg viewBox="0 0 120 120" class="w-full h-full">
+                                <defs>
+                                    <radialGradient id="compassGrad" cx="50%" cy="50%" r="50%">
+                                        <stop offset="0%" stop-color="rgba(14, 165, 233, 0.18)"/>
+                                        <stop offset="100%" stop-color="rgba(15, 23, 42, 0.9)"/>
+                                    </radialGradient>
+                                </defs>
+                                <circle cx="60" cy="60" r="54" fill="url(#compassGrad)" stroke="rgba(56, 189, 248, 0.35)" stroke-width="1.5"/>
+                                <circle cx="60" cy="60" r="44" fill="none" stroke="rgba(148, 163, 184, 0.2)" stroke-dasharray="3 3" stroke-width="1"/>
+                                <!-- Cardinal Labels: SH (Shimol), SHQ (Sharq), J (Janub), G' (G'arb) -->
+                                <text x="60" y="17" text-anchor="middle" fill="#38bdf8" font-size="9" font-weight="800">SH</text>
+                                <text x="105" y="63" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">SHQ</text>
+                                <text x="60" y="110" text-anchor="middle" fill="#94a3b8" font-size="9" font-weight="700">J</text>
+                                <text x="15" y="63" text-anchor="middle" fill="#94a3b8" font-size="8" font-weight="700">G'</text>
+                            </svg>
+
+                            <!-- Rotating Direction Needle -->
+                            <div id="compass-needle" class="absolute inset-0 flex items-center justify-center transition-transform duration-700 ease-out" style="transform: rotate(0deg);">
+                                <svg viewBox="0 0 100 100" class="w-28 h-28">
+                                    <!-- North / Direction Pointer (Cyan/Red) -->
+                                    <polygon points="50,14 44,50 56,50" fill="#38bdf8"/>
+                                    <polygon points="50,86 44,50 56,50" fill="#475569"/>
+                                    <circle cx="50" cy="50" r="5" fill="#f8fafc" stroke="#0284c7" stroke-width="2"/>
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-1">
+                            Yo'nalish: <strong id="wind-dir-text" class="text-sky-300">Shimol (0°)</strong>
+                        </p>
+                    </div>
+
+                    <!-- Animated Spinning Wind Turbine & Speed Readout -->
+                    <div class="flex flex-col items-center justify-center bg-slate-900/55 border border-slate-800 rounded-2xl p-4">
+                        <div class="relative w-28 h-28 flex items-center justify-center">
+                            <svg viewBox="0 0 100 110" class="w-full h-full overflow-visible">
+                                <!-- Turbine Tower -->
+                                <path d="M47 50 L44 102 L56 102 L53 50 Z" fill="rgba(148, 163, 184, 0.5)"/>
+                                <line x1="35" y1="102" x2="65" y2="102" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+                                <!-- Rotating Blades -->
+                                <g id="turbine-rotor" class="turbine-blades" style="--turbine-duration: 2.5s;">
+                                    <path d="M50 50 C47 32 47 15 50 5 C53 15 53 32 50 50" fill="#38bdf8"/>
+                                    <path d="M50 50 C64 57 79 65 88 72 C77 69 62 60 50 50" fill="#38bdf8"/>
+                                    <path d="M50 50 C38 60 23 69 12 72 C21 65 36 57 50 50" fill="#38bdf8"/>
+                                    <circle cx="50" cy="50" r="4.5" fill="#e0f2fe" stroke="#0284c7" stroke-width="2"/>
+                                </g>
+                            </svg>
+                        </div>
+                        <div class="text-center mt-1">
+                            <span id="wind-speed-kmh" class="font-display font-extrabold text-2xl sm:text-3xl text-white">--</span>
+                            <span class="text-xs font-semibold text-sky-400">km/soat</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400">
+                            (<span id="wind-speed-ms" class="text-emerald-300 font-semibold">-- m/s</span>)
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Bottom Wind Metrics: Gusts, Max Today, Beaufort Advice -->
+                <div class="space-y-2.5 pt-3 border-t border-slate-800/80">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-800">
+                            <p class="text-[11px] text-slate-400">Shamol kuchayishi (Gusts)</p>
+                            <p id="wind-gusts-val" class="text-sm sm:text-base font-bold text-amber-300 mt-0.5">-- km/soat</p>
+                        </div>
+                        <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-800">
+                            <p class="text-[11px] text-slate-400">Bugungi maks. shamol</p>
+                            <p id="wind-max-today" class="text-sm sm:text-base font-bold text-sky-300 mt-0.5">-- km/soat</p>
+                        </div>
+                    </div>
+                    <p id="wind-advice-text" class="text-xs text-slate-300 bg-slate-900/40 px-3.5 py-2 rounded-xl border border-slate-800/70">
+                        <i class="fa-solid fa-circle-check text-emerald-400 mr-1.5"></i> Sayr qilish va ochiq havoda yurish uchun qulay shamol.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 24-HOUR HOURLY PRECIPITATION (RAIN / SNOW) & WIND TIMELINE -->
+        <section class="glass-card rounded-3xl p-6 sm:p-7 space-y-5">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-sky-400"></span>
+                        <span class="text-xs font-bold uppercase tracking-widest text-sky-400">Soatbay Radar</span>
+                    </div>
+                    <h3 class="font-display font-bold text-xl sm:text-2xl text-white mt-0.5">
+                        Soat nechada Yomg'ir yoki Qor yog'adi? (24 Soatlik Jadval)
+                    </h3>
+                </div>
+
+                <!-- Timeline Filter Tabs -->
+                <div class="flex items-center gap-2 bg-slate-900/70 p-1.5 rounded-2xl border border-slate-800 self-start sm:self-auto">
+                    <button onclick="setHourlyFilter('all')" id="tab-hourly-all" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-500 text-white shadow transition">
+                        Barcha soatlar (24s)
+                    </button>
+                    <button onclick="setHourlyFilter('precip')" id="tab-hourly-precip" class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition">
+                        Faqat Yomg'ir/Qor bor soatlar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Horizontal Scrollable Hourly Cards -->
+            <div id="hourly-timeline-container" class="flex items-stretch gap-3.5 overflow-x-auto pb-3 pt-1">
+                <!-- Populated dynamically by JS -->
+            </div>
+        </section>
+
+        <!-- 7-DAY FORECAST & DETAILED METRICS GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT 7 COLS: 7-DAY WEATHER & PRECIPITATION FORECAST -->
+            <div class="lg:col-span-7 glass-card rounded-3xl p-6 sm:p-7 space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold uppercase tracking-widest text-indigo-400">Haftalik Taqvim</span>
+                        <h3 class="font-display font-bold text-xl sm:text-2xl text-white mt-0.5">
+                            7 Kunlik Ob-havo va Yog'ingarchilik Prognozi
+                        </h3>
+                    </div>
+                    <span class="text-xs text-slate-400 hidden sm:inline">Harorat, Yomg'ir/Qor % va Shamol</span>
+                </div>
+
+                <div id="daily-forecast-list" class="divide-y divide-slate-800/70 space-y-1">
+                    <!-- Populated via JS -->
+                </div>
+            </div>
+
+            <!-- RIGHT 5 COLS: ATMOSPHERIC & ASTRONOMICAL DETAILS -->
+            <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
+
+                <!-- UV Index Card -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-400 uppercase">UV Indeksi</span>
+                        <i class="fa-solid fa-sun text-amber-400 text-lg"></i>
+                    </div>
+                    <div class="my-3">
+                        <div class="flex items-baseline gap-2">
+                            <span id="metric-uv-val" class="font-display font-extrabold text-3xl text-white">--</span>
+                            <span id="metric-uv-badge" class="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300">Past</span>
+                        </div>
+                        <div class="w-full h-2 rounded-full bg-slate-800 mt-3 overflow-hidden">
+                            <div id="metric-uv-bar" class="h-full rounded-full bg-gradient-to-r from-emerald-400 via-amber-400 to-rose-500 transition-all duration-500" style="width: 25%"></div>
+                        </div>
+                    </div>
+                    <p id="metric-uv-advice" class="text-xs text-slate-400">Quyosh nurlari xavfsiz darajada.</p>
+                </div>
+
+                <!-- Atmospheric Pressure Card -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-400 uppercase">Atmosfera Bosimi</span>
+                        <i class="fa-solid fa-gauge-high text-sky-400 text-lg"></i>
+                    </div>
+                    <div class="my-3">
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="metric-pressure-mmhg" class="font-display font-extrabold text-3xl text-white">--</span>
+                            <span class="text-xs text-sky-300 font-semibold">mm.sim.ust</span>
+                        </div>
+                        <p id="metric-pressure-hpa" class="text-xs text-slate-400 mt-1">-- gPa (hPa)</p>
+                    </div>
+                    <p class="text-xs text-slate-400">Me'yoriy atmosfera bosimi.</p>
+                </div>
+
+                <!-- Visibility Card -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-400 uppercase">Ko'rinish Masofasi</span>
+                        <i class="fa-solid fa-eye text-indigo-400 text-lg"></i>
+                    </div>
+                    <div class="my-3">
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="metric-visibility" class="font-display font-extrabold text-3xl text-white">--</span>
+                            <span class="text-xs text-indigo-300 font-semibold">km</span>
+                        </div>
+                    </div>
+                    <p id="metric-visibility-desc" class="text-xs text-slate-400">Yo'llarda ko'rinish juda yaxshi.</p>
+                </div>
+
+                <!-- Total Daily Precipitation Card -->
+                <div class="glass-card rounded-3xl p-5 flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-400 uppercase">Bugungi Yog'in</span>
+                        <i class="fa-solid fa-umbrella text-cyan-400 text-lg"></i>
+                    </div>
+                    <div class="my-3">
+                        <div class="flex items-baseline gap-1.5">
+                            <span id="metric-daily-precip" class="font-display font-extrabold text-3xl text-white">--</span>
+                            <span class="text-xs text-cyan-300 font-semibold">mm</span>
+                        </div>
+                    </div>
+                    <p id="metric-umbrella-advice" class="text-xs text-slate-400">Soyabon olish shart emas.</p>
+                </div>
+
+                <!-- Sunrise & Sunset Horizon Arc Card (Spans 2 cols) -->
+                <div class="sm:col-span-2 glass-card rounded-3xl p-5 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-400 uppercase flex items-center gap-1.5">
+                            <i class="fa-solid fa-sun-plant-wilt text-amber-400"></i> Quyosh Chiqishi va Botishi
+                        </span>
+                        <span id="daylight-duration" class="text-xs font-semibold text-amber-300">Kun davomiyligi: -- soat</span>
+                    </div>
+
+                    <!-- SVG Sun Trajectory Arc -->
+                    <div class="relative pt-2">
+                        <svg viewBox="0 0 300 90" class="w-full h-24 overflow-visible">
+                            <defs>
+                                <linearGradient id="sunArcGrad" x1="0" y1="0" x2="1" y2="0">
+                                    <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.3"/>
+                                    <stop offset="50%" stop-color="#38bdf8" stop-opacity="0.9"/>
+                                    <stop offset="100%" stop-color="#ec4899" stop-opacity="0.4"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Horizon Line -->
+                            <line x1="15" y1="75" x2="285" y2="75" stroke="rgba(148, 163, 184, 0.25)" stroke-width="1.5" stroke-dasharray="4 4"/>
+                            <!-- Dashed Full Arc -->
+                            <path d="M 25 75 Q 150 -25 275 75" fill="none" stroke="url(#sunArcGrad)" stroke-width="3" stroke-linecap="round"/>
+                            <!-- Animated Sun Position Circle -->
+                            <g id="sun-arc-marker" transform="translate(150, 25)">
+                                <circle cx="0" cy="0" r="10" fill="rgba(251, 191, 36, 0.25)"/>
+                                <circle cx="0" cy="0" r="5.5" fill="#fbbf24" stroke="#fff" stroke-width="1.5"/>
+                            </g>
+                        </svg>
+
+                        <div class="flex items-center justify-between text-xs px-2 -mt-2">
+                            <div>
+                                <p class="text-slate-400">Quyosh chiqishi</p>
+                                <p id="sunrise-time" class="font-display font-bold text-sm text-amber-300">--:--</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-slate-400">Quyosh botishi</p>
+                                <p id="sunset-time" class="font-display font-bold text-sm text-rose-300">--:--</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer class="glass-card rounded-3xl p-5 text-center sm:flex sm:items-center sm:justify-between text-xs text-slate-400">
+            <div class="flex items-center justify-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>Ma'lumotlar <strong>Open-Meteo Global Yuqori Aniqlikdagi Meteorologik Stansiyasi</strong> orqali real vaqtda yangilanadi.</span>
+            </div>
+            <div class="mt-2 sm:mt-0">
+                <button onclick="refreshCurrentCityWeather()" class="text-sky-400 hover:text-sky-300 font-semibold inline-flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate"></i> Hozir yangilash
+                </button>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- APPLICATION JAVASCRIPT -->
+    <script>
+        /********************************************************************
+         * 1. STATE & PRESET CITIES (Uzbekistan + Global Hubs)
+         ********************************************************************/
+        const PRESET_CITIES = [
+            { name: "Toshkent", country: "O'zbekiston", lat: 41.2995, lon: 69.2401 },
+            { name: "Samarqand", country: "O'zbekiston", lat: 39.6542, lon: 66.9597 },
+            { name: "Buxoro", country: "O'zbekiston", lat: 39.7747, lon: 64.4286 },
+            { name: "Andijon", country: "O'zbekiston", lat: 40.7821, lon: 72.3442 },
+            { name: "Namangan", country: "O'zbekiston", lat: 40.9983, lon: 71.6726 },
+            { name: "Farg'ona", country: "O'zbekiston", lat: 40.3842, lon: 71.7843 },
+            { name: "Xiva", country: "O'zbekiston", lat: 41.3783, lon: 60.3639 },
+            { name: "Nukus", country: "O'zbekiston", lat: 42.4619, lon: 59.6166 },
+            { name: "Qarshi", country: "O'zbekiston", lat: 38.8606, lon: 65.7891 },
+            { name: "Termiz", country: "O'zbekiston", lat: 37.2242, lon: 67.2783 },
+            { name: "Istanbul", country: "Turkiya", lat: 41.0082, lon: 28.9784 },
+            { name: "Dubay", country: "BAA", lat: 25.2048, lon: 55.2708 },
+            { name: "London", country: "Buyuk Britaniya", lat: 51.5074, lon: -0.1278 },
+            { name: "Tokio", country: "Yaponiya", lat: 35.6762, lon: 139.6503 }
+        ];
+
+        let appState = {
+            city: PRESET_CITIES[0],
+            weatherData: null,
+            simulationMode: 'auto', // 'auto' | 'sunny' | 'rain' | 'storm' | 'snow' | 'wind'
+            activeEffect: 'clear',  // computed particle mode
+            windSpeedKmh: 12,
+            isDay: 1,
+            hourlyFilter: 'all',    // 'all' | 'precip'
+            timezone: 'Asia/Tashkent',
+            soundEnabled: false
+        };
+
+        const UZ_DAYS = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+        const UZ_MONTHS = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+
+        /********************************************************************
+         * 2. WMO WEATHER CODES TO UZBEK DESCRIPTIONS & EFFECT MAPPING
+         ********************************************************************/
+        function getWeatherMetadata(wmoCode, isDay = 1) {
+            const map = {
+                0:  { label: isDay ? "Musaffo va quyoshli" : "Ochiq yulduzli osmon", icon: isDay ? "sun" : "moon", effect: "sunny" },
+                1:  { label: isDay ? "Asosan ochiq havo" : "Asosan ochiq tun", icon: isDay ? "sun-cloud" : "moon-cloud", effect: "sunny" },
+                2:  { label: "Qisman bulutli", icon: isDay ? "sun-cloud" : "moon-cloud", effect: "cloudy" },
+                3:  { label: "Bulutli havo", icon: "cloud", effect: "cloudy" },
+                45: { label: "Tuman tushgan", icon: "fog", effect: "cloudy" },
+                48: { label: "Qirovli qalin tuman", icon: "fog", effect: "snow" },
+                51: { label: "Mayin shivalama yomg'ir", icon: "rain-light", effect: "rain" },
+                53: { label: "O'rtacha shivalama yomg'ir", icon: "rain", effect: "rain" },
+                55: { label: "Quyuq shivalama yomg'ir", icon: "rain", effect: "rain" },
+                56: { label: "Muzlovchi mayin yomg'ir", icon: "sleet", effect: "rain" },
+                57: { label: "Kuchli muzlovchi yomg'ir", icon: "sleet", effect: "rain" },
+                61: { label: "Yengil yomg'ir yog'moqda", icon: "rain-light", effect: "rain" },
+                63: { label: "O'rtacha yomg'ir yog'moqda", icon: "rain", effect: "rain" },
+                65: { label: "Kuchli jala yomg'ir", icon: "rain-heavy", effect: "storm" },
+                66: { label: "Sovuq yomg'ir", icon: "sleet", effect: "rain" },
+                67: { label: "Kuchli muzli yomg'ir", icon: "sleet", effect: "storm" },
+                71: { label: "Mayin qor yog'moqda", icon: "snow", effect: "snow" },
+                73: { label: "O'rtacha qor yog'moqda", icon: "snow", effect: "snow" },
+                75: { label: "Qalin qor va bo'ron", icon: "snow-heavy", effect: "snow" },
+                77: { label: "Qor donachalari", icon: "snow", effect: "snow" },
+                80: { label: "Qisqa muddatli yomg'ir", icon: "rain-light", effect: "rain" },
+                81: { label: "Jala yomg'ir", icon: "rain", effect: "rain" },
+                82: { label: "Kuchli sel yomg'iri", icon: "rain-heavy", effect: "storm" },
+                85: { label: "Qisqa qor yog'ishi", icon: "snow", effect: "snow" },
+                86: { label: "Kuchli qor bo'roni", icon: "snow-heavy", effect: "snow" },
+                95: { label: "Momaqaldiroq va chaqmoq", icon: "storm", effect: "storm" },
+                96: { label: "Do'l aralash momaqaldiroq", icon: "storm", effect: "storm" },
+                99: { label: "Kuchli do'l va chaqmoq", icon: "storm", effect: "storm" }
+            };
+            return map[wmoCode] || { label: "O'zgaruvchan ob-havo", icon: "sun-cloud", effect: "sunny" };
+        }
+
+        /********************************************************************
+         * 3. CUSTOM ANIMATED SVG WEATHER ICONS
+         ********************************************************************/
+        function getWeatherSVG(iconType, sizeClass = "w-full h-full") {
+            switch (iconType) {
+                case "sun":
+                    return `<svg viewBox="0 0 100 100" class="${sizeClass}">
+                        <defs>
+                            <radialGradient id="sunGlow" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" stop-color="#fde047"/>
+                                <stop offset="70%" stop-color="#f59e0b"/>
+                                <stop offset="100%" stop-color="#ea580c" stop-opacity="0"/>
+                            </radialGradient>
+                        </defs>
+                        <circle cx="50" cy="50" r="38" fill="url(#sunGlow)" opacity="0.35"/>
+                        <circle cx="50" cy="50" r="22" fill="#facc15" stroke="#fef08a" stroke-width="2"/>
+                        <g stroke="#facc15" stroke-width="4" stroke-linecap="round">
+                            <line x1="50" y1="10" x2="50" y2="18"/><line x1="50" y1="82" x2="50" y2="90"/>
+                            <line x1="10" y1="50" x2="18" y2="50"/><line x1="82" y1="50" x2="90" y2="50"/>
+                            <line x1="22" y1="22" x2="28" y2="28"/><line x1="72" y1="72" x2="78" y2="78"/>
+                            <line x1="78" y1="22" x2="72" y2="28"/><line x1="28" y1="72" x2="22" y2="78"/>
+                        </g>
+                    </svg>`;
+                case "moon":
+                    return `<svg viewBox="0 0 100 100" class="${sizeClass}">
+                        <circle cx="50" cy="50" r="36" fill="rgba(99, 102, 241, 0.2)"/>
+                        <path d="M62 24A26 26 0 1 0 80 65 22 22 0 0 1 62 24Z" fill="#e0e7ff" stroke="#818cf8" stroke-width="2"/>
+                        <circle cx="32" cy="28" r="2" fill="#fde047"/>
+                        <circle cx="75" cy="30" r="1.5" fill="#fde047"/>
+                    </svg>`;
+                case "sun-cloud":
+                    return `<svg viewBox="0 0 100 100" class="${sizeClass}">
+                        <circle cx="36" cy="38" r="16" fill="#facc15"/>
+                        <path d="M30 72H72A14 14 0 0 0 74 44 18 18 0 0 0 40 38 15 15 0 0 0 30 72Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.5"/>
+                    </svg>`;
+                case "moon-cloud":
+                    return `<svg viewBox="0 0 100 100" class="${sizeClass}">
+                        <path d="M42 20A16 16 0 1 0 56 44 14 14 0 0 1 42 20Z" fill="#c7d2fe"/>
+                        <path d="M28 74H72A14 14 0 0 0 74 46 18 18 0 0 0 40 40 15 15 0 0 0 28 74Z" fill="#cbd5e1"/>
+                    </svg>`;
+                case "rain-light":
+                case "rain":
+                case "rain-heavy":
+                    return `<svg viewBox="0 0 100 100" class="${sizeClass}">
+                        <path d="M25 62H74A14 14 0 0 0 75 34 19 19 0 0 0 39 29 15 15 0 0 0 25 62Z" fill="#94a3b8"/>
+                        <g stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round">
+                            <line x1="36" y1="68" x2="31" y2="84"/>
+                            <line x1="51" y1="68" x2="46" y2="86"/>
+                            <line x1="66" y1="68" x2="61" y2="84"/>
+                        </g>
+                    </svg>`;
+                case "snow":
+                case "snow-heavy":
+                    return `<svg viewBox="0 0 100 100" class="${sizeClass}">
+                        <path d="M25 62H74A14 14 0 0 0 75 34 19 19 0 0 0 39 29 15 15 0 0 0 25 62Z" fill="#cbd5e1"/>
+                        <g fill="#67e8f9">
+                            <circle cx="35" cy="74" r="3.5"/>
+                            <circle cx="50" cy="80" r="4"/>
+                            <circle cx="65" cy="74" r="3.5"/>
+                            <circle cx="42" cy="88" r="2.5"/>
+                            <circle cx="58" cy="88" r="2.5"/>
+                        </g>
+                    </svg>`;
+                case "storm":
+                    return `<svg viewBox="0 0 100 100" class="${sizeClass}">
+                        <path d="M24 58H75A14 14 0 0 0 76 30 19 19 0 0 0 40 25 15 15 0 0 0 24 58Z" fill="#64748b"/>
+                        <polygon points="52,54 39,73 49,73 45,92 64,69 53,69" fill="#facc15"/>
+                        <line x1="31" y1="66" x2="27" y2="79" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+                        <line x1="70" y1="66" x2="66" y2="79" stroke="#38bdf8" stroke-width="3" stroke-linecap="round"/>
+                    </svg>`;
+                default:
+                    return `<svg viewBox="0 0 100 100" class="${sizeClass}">
+                        <path d="M25 68H74A15 15 0 0 0 75 38 20 20 0 0 0 38 33 16 16 0 0 0 25 68Z" fill="#cbd5e1"/>
+                    </svg>`;
+            }
+        }
+
+        /********************************************************************
+         * 4. WIND DIRECTION & BEAUFORT SCALE HELPER (UZBEK)
+         ********************************************************************/
+        function getWindDirectionText(deg) {
+            const dirs = [
+                "Shimol (SH)", "Shimoli-sharq (SH-SHQ)", "Sharq (SHQ)", "Janubi-sharq (J-SHQ)",
+                "Janub (J)", "Janubi-g'arb (J-G')", "G'arb (G')", "Shimoli-g'arb (SH-G')"
+            ];
+            const index = Math.round(((deg %= 360) < 0 ? deg + 360 : deg) / 45) % 8;
+            return `${dirs[index]} • ${Math.round(deg)}°`;
+        }
+
+        function getBeaufortInfo(kmh) {
+            if (kmh < 2) return { badge: "Sokin (Shtil)", color: "emerald", advice: "Shamol deyarli yo'q, havo juda sokin." };
+            if (kmh < 12) return { badge: "Mayin shabada", color: "emerald", advice: "Sayr qilish va ochiq havoda yurish uchun juda yoqimli shabada." };
+            if (kmh < 28) return { badge: "O'rtacha shamol", color: "sky", advice: "Daraxt barglari va mayda shoxlar tebranadi, havo musaffo." };
+            if (kmh < 49) return { badge: "Kuchli shamol", color: "amber", advice: "Kattaroq daraxt shoxlari tebranadi, soyabon tutish biroz qiyinlashishi mumkin." };
+            return { badge: "Shiddatli bo'ron!", color: "rose", advice: "Diqqat! Kuchli shamol esmoqda, ehtiyot choralarini ko'ring." };
+        }
+
+        /********************************************************************
+         * 5. REAL-TIME OPEN-METEO API FETCHING
+         ********************************************************************/
+        async function fetchWeatherForCity(cityObj) {
+            try {
+                appState.city = cityObj;
+                highlightQuickCityChip(cityObj.name);
+
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${cityObj.lat}&longitude=${cityObj.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,surface_pressure,wind_speed_10m,wind_direction_10m,wind_gusts_10m&hourly=temperature_2m,precipitation_probability,precipitation,rain,showers,snowfall,weather_code,visibility,wind_speed_10m,wind_direction_10m,uv_index&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max,precipitation_sum,rain_sum,snowfall_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max&timezone=auto`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Serverdan ma'lumot olishda xatolik");
+                const data = await response.json();
+
+                appState.weatherData = data;
+                appState.timezone = data.timezone || 'Asia/Tashkent';
+                appState.windSpeedKmh = data.current.wind_speed_10m || 5;
+                appState.isDay = data.current.is_day;
+
+                renderAllDashboard(data);
+                updateVisualAtmosphere();
+                showToast("Yangilandi", `${cityObj.name} uchun jonli ob-havo ma'lumotlari yuklandi`);
+            } catch (err) {
+                console.error(err);
+                showToast("Xatolik", "Internet aloqasini tekshiring va qayta urinib ko'ring", true);
+            }
+        }
+
+        function refreshCurrentCityWeather() {
+            if (appState.city) {
+                fetchWeatherForCity(appState.city);
+            }
+        }
+
+        /********************************************************************
+         * 6. RENDER DASHBOARD SECTIONS
+         ********************************************************************/
+        function renderAllDashboard(data) {
+            const cur = data.current;
+            const daily = data.daily;
+            const hourly = data.hourly;
+
+            // 1. Hero Card
+            document.getElementById('current-city-name').textContent = appState.city.name;
+            document.getElementById('current-region-coords').textContent =
+                `${appState.city.country || ''} • ${appState.city.lat.toFixed(2)}° N, ${appState.city.lon.toFixed(2)}° E`;
+
+            const dayBadge = document.getElementById('day-night-badge');
+            if (cur.is_day) {
+                dayBadge.textContent = "☀️ Kunduz";
+                dayBadge.className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/30";
+            } else {
+                dayBadge.textContent = "🌙 Tun";
+                dayBadge.className = "text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30";
+            }
+
+            const meta = getWeatherMetadata(cur.weather_code, cur.is_day);
+            document.getElementById('hero-weather-svg').innerHTML = getWeatherSVG(meta.icon, "w-24 h-24 sm:w-28 sm:h-28");
+            document.getElementById('current-temp').textContent = Math.round(cur.temperature_2m);
+            document.getElementById('current-condition-text').textContent = meta.label;
+            document.getElementById('current-feels-like').textContent = `${Math.round(cur.apparent_temperature)}°C`;
+            document.getElementById('current-temp-max').textContent = `${Math.round(daily.temperature_2m_max[0])}°C`;
+            document.getElementById('current-temp-min').textContent = `${Math.round(daily.temperature_2m_min[0])}°C`;
+
+            const curRain = (cur.rain || 0) + (cur.showers || 0);
+            document.getElementById('instant-rain').textContent = `${curRain.toFixed(1)} mm`;
+            document.getElementById('instant-snow').textContent = `${(cur.snowfall || 0).toFixed(1)} sm`;
+            document.getElementById('instant-clouds').textContent = `${cur.cloud_cover}%`;
+            document.getElementById('instant-humidity').textContent = `${cur.relative_humidity_2m}%`;
+
+            // 2. Wind Dynamics & Compass Card
+            const windKmh = cur.wind_speed_10m || 0;
+            const windMs = (windKmh / 3.6).toFixed(1);
+            const windDeg = cur.wind_direction_10m || 0;
+            const windGusts = cur.wind_gusts_10m || windKmh;
+
+            document.getElementById('wind-speed-kmh').textContent = windKmh.toFixed(1);
+            document.getElementById('wind-speed-ms').textContent = `${windMs} m/s`;
+            document.getElementById('wind-dir-text').textContent = getWindDirectionText(windDeg);
+            document.getElementById('compass-needle').style.transform = `rotate(${windDeg}deg)`;
+            document.getElementById('wind-gusts-val').textContent = `${windGusts.toFixed(1)} km/soat`;
+            document.getElementById('wind-max-today').textContent = `${(daily.wind_speed_10m_max[0] || windKmh).toFixed(1)} km/soat`;
+
+            // Dynamically adjust Wind Turbine spin speed
+            const rotor = document.getElementById('turbine-rotor');
+            const spinSec = Math.max(0.35, Math.min(6, 18 / Math.max(windKmh, 2)));
+            rotor.style.setProperty('--turbine-duration', `${spinSec.toFixed(2)}s`);
+
+            const bf = getBeaufortInfo(windKmh);
+            const bfBadge = document.getElementById('beaufort-badge');
+            bfBadge.textContent = bf.badge;
+            document.getElementById('wind-advice-text').innerHTML = `<i class="fa-solid fa-wind text-sky-400 mr-1.5"></i> ${bf.advice}`;
+
+            // 3. Smart Precipitation Radar Analysis ("Qachon yomg'ir yoki qor yog'adi?")
+            analyzeUpcomingPrecipitation(cur, hourly, daily);
+
+            // 4. 24-Hour Timeline
+            renderHourlyTimeline(hourly, cur.is_day);
+
+            // 5. 7-Day Forecast
+            renderSevenDayForecast(daily);
+
+            // 6. Extra Atmospheric Cards (UV, Pressure, Visibility, Sunrise/Sunset)
+            renderExtraMetrics(cur, hourly, daily);
+        }
+
+        /********************************************************************
+         * 7. SMART PRECIPITATION RADAR ("Qachon yomg'ir yoki qor yog'adi?")
+         ********************************************************************/
+        function analyzeUpcomingPrecipitation(cur, hourly, daily) {
+            // Find current hour index
+            const nowISO = cur.time.slice(0, 13); // YYYY-MM-DDTHH
+            let startIndex = hourly.time.findIndex(t => t.startsWith(nowISO));
+            if (startIndex === -1) startIndex = 0;
+
+            let total24hRain = 0;
+            let total24hSnow = 0;
+            let max24hProb = 0;
+            let firstRainHour = null;
+            let firstSnowHour = null;
+
+            for (let i = startIndex; i < Math.min(startIndex + 24, hourly.time.length); i++) {
+                const prob = hourly.precipitation_probability[i] || 0;
+                const rainAmt = (hourly.rain[i] || 0) + (hourly.showers[i] || 0);
+                const snowAmt = hourly.snowfall[i] || 0;
+
+                total24hRain += rainAmt;
+                total24hSnow += snowAmt;
+                if (prob > max24hProb) max24hProb = prob;
+
+                if (!firstSnowHour && (snowAmt > 0 || (prob >= 45 && [71,73,75,77,85,86].includes(hourly.weather_code[i])))) {
+                    firstSnowHour = { time: hourly.time[i], prob, amount: snowAmt, offsetHours: i - startIndex };
+                }
+                if (!firstRainHour && (rainAmt > 0 || (prob >= 45 && !firstSnowHour))) {
+                    firstRainHour = { time: hourly.time[i], prob, amount: rainAmt, offsetHours: i - startIndex };
+                }
+            }
+
+            const headlineEl = document.getElementById('precip-headline');
+            const subtextEl = document.getElementById('precip-subtext');
+            const iconBox = document.getElementById('precip-alert-icon-box');
+
+            document.getElementById('banner-24h-precip').textContent =
+                total24hSnow > 0 ? `${total24hSnow.toFixed(1)} sm qor` : `${total24hRain.toFixed(1)} mm`;
+            document.getElementById('banner-24h-prob').textContent = `${max24hProb}%`;
+
+            const currentlySnowing = (cur.snowfall || 0) > 0 || [71,73,75,77,85,86].includes(cur.weather_code);
+            const currentlyRaining = ((cur.rain || 0) + (cur.showers || 0)) > 0 || [51,53,55,61,63,65,80,81,82,95,96,99].includes(cur.weather_code);
+
+            if (currentlySnowing) {
+                headlineEl.innerHTML = `❄️ Ayni damda <span class="text-cyan-300">${appState.city.name}</span>da qor yog'moqda!`;
+                subtextEl.textContent = `Hozirgi qor miqdori: ${cur.snowfall || 0.2} sm/soat. Keyingi 24 soatda jami ~${total24hSnow.toFixed(1)} sm qor kutilmoqda.`;
+                iconBox.innerHTML = `<i class="fa-regular fa-snowflake animate-spin"></i>`;
+            } else if (currentlyRaining) {
+                const curMm = ((cur.rain || 0) + (cur.showers || 0)).toFixed(1);
+                headlineEl.innerHTML = `🌧️ Ayni damda <span class="text-sky-300">${appState.city.name}</span>da yomg'ir yog'moqda!`;
+                subtextEl.textContent = `Joriy yog'ingarchilik: ${curMm} mm. Ko'chaga chiqishda soyabon olishni unutmang.`;
+                iconBox.innerHTML = `<i class="fa-solid fa-umbrella animate-bounce"></i>`;
+            } else if (firstSnowHour) {
+                const hrStr = firstSnowHour.time.slice(11, 16);
+                const whenText = firstSnowHour.offsetHours === 0 ? "Shu soat ichida" : `${firstSnowHour.offsetHours} soatdan so'ng (soat ${hrStr} da)`;
+                headlineEl.innerHTML = `🌨️ Diqqat: ${whenText} qor yog'ishi kutilmoqda!`;
+                subtextEl.textContent = `Ehtimollik: ${firstSnowHour.prob}%. Harorat pasayishi va shamol kuchayishi kuzatiladi.`;
+                iconBox.innerHTML = `<i class="fa-regular fa-snowflake text-cyan-300"></i>`;
+            } else if (firstRainHour) {
+                const hrStr = firstRainHour.time.slice(11, 16);
+                const whenText = firstRainHour.offsetHours === 0 ? "Yaqin daqiqalarda" : `${firstRainHour.offsetHours} soatdan so'ng (soat ${hrStr} da)`;
+                headlineEl.innerHTML = `🌦️ Diqqat: ${whenText} yomg'ir yog'ishi kutilmoqda!`;
+                subtextEl.textContent = `Yog'ingarchilik ehtimoli: ${firstRainHour.prob}% (Taxminan ~${Math.max(0.2, firstRainHour.amount).toFixed(1)} mm). Soyabon tayyorlab qo'ying.`;
+                iconBox.innerHTML = `<i class="fa-solid fa-cloud-showers-heavy text-sky-300"></i>`;
+            } else {
+                // Check 7-day forecast to tell the user which upcoming day has rain/snow
+                let nextWetDay = null;
+                for (let d = 1; d < daily.time.length; d++) {
+                    if ((daily.precipitation_probability_max[d] || 0) >= 40 || (daily.precipitation_sum[d] || 0) > 0.5) {
+                        const dateObj = new Date(daily.time[d]);
+                        const dayName = UZ_DAYS[dateObj.getDay()];
+                        const isSnow = (daily.snowfall_sum[d] || 0) > 0;
+                        nextWetDay = { dayName, date: daily.time[d], prob: daily.precipitation_probability_max[d], sum: daily.precipitation_sum[d], isSnow };
+                        break;
+                    }
+                }
+
+                headlineEl.innerHTML = `☀️ Keyingi 24 soat ichida yomg'ir yoki qor kutilmaydi`;
+                if (nextWetDay) {
+                    subtextEl.textContent = `Yaqin sutkada havo quruq bo'ladi. Keyingi ${nextWetDay.isSnow ? 'qor' : "yomg'ir"} ${nextWetDay.dayName} kuni (${nextWetDay.prob}% ehtimollik, ~${nextWetDay.sum} mm) kutilmoqda.`;
+                } else {
+                    subtextEl.textContent = `Keyingi 7 kun davomida yog'ingarchilik ehtimoli juda past (${max24hProb}%) — havo ochiq va barqaror bo'ladi.`;
+                }
+                iconBox.innerHTML = `<i class="fa-solid fa-sun text-amber-400"></i>`;
+            }
+        }
+
+        /********************************************************************
+         * 8. RENDER 24-HOUR HOURLY TIMELINE
+         ********************************************************************/
+        function setHourlyFilter(filterMode) {
+            appState.hourlyFilter = filterMode;
+            const btnAll = document.getElementById('tab-hourly-all');
+            const btnPrecip = document.getElementById('tab-hourly-precip');
+
+            if (filterMode === 'all') {
+                btnAll.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-500 text-white shadow transition";
+                btnPrecip.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition";
+            } else {
+                btnPrecip.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-sky-500 text-white shadow transition";
+                btnAll.className = "px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white transition";
+            }
+            if (appState.weatherData) {
+                renderHourlyTimeline(appState.weatherData.hourly, appState.weatherData.current.is_day);
+            }
+        }
+
+        function renderHourlyTimeline(hourly, currentIsDay) {
+            const container = document.getElementById('hourly-timeline-container');
+            const nowISO = appState.weatherData.current.time.slice(0, 13);
+            let startIdx = hourly.time.findIndex(t => t.startsWith(nowISO));
+            if (startIdx === -1) startIdx = 0;
+
+            let cardsHTML = '';
+            let renderedCount = 0;
+
+            for (let i = startIdx; i < Math.min(startIdx + 24, hourly.time.length); i++) {
+                const timeStr = hourly.time[i].slice(11, 16);
+                const hourNum = parseInt(timeStr.slice(0, 2), 10);
+                const isDayHour = hourNum >= 6 && hourNum <= 19 ? 1 : 0;
+                const temp = Math.round(hourly.temperature_2m[i]);
+                const prob = hourly.precipitation_probability[i] || 0;
+                const rainMm = (hourly.rain[i] || 0) + (hourly.showers[i] || 0);
+                const snowCm = hourly.snowfall[i] || 0;
+                const windKmh = Math.round(hourly.wind_speed_10m[i] || 0);
+                const windDeg = hourly.wind_direction_10m[i] || 0;
+                const wmo = hourly.weather_code[i];
+
+                const hasPrecip = prob >= 20 || rainMm > 0 || snowCm > 0;
+                if (appState.hourlyFilter === 'precip' && !hasPrecip) continue;
+
+                renderedCount++;
+                const meta = getWeatherMetadata(wmo, isDayHour);
+                const isNow = i === startIdx;
+
+                const precipBadge = snowCm > 0
+                    ? `<span class="text-[11px] font-bold text-cyan-300">${snowCm.toFixed(1)} sm qor</span>`
+                    : `<span class="text-[11px] font-bold ${rainMm > 0 ? 'text-sky-300' : 'text-slate-500'}">${rainMm.toFixed(1)} mm</span>`;
+
+                cardsHTML += `
+                    <div class="shrink-0 w-32 rounded-2xl p-3.5 flex flex-col items-center justify-between transition ${
+                        isNow
+                            ? 'bg-gradient-to-b from-sky-500/25 to-indigo-600/20 border-2 border-sky-400 shadow-lg shadow-sky-500/15'
+                            : hasPrecip
+                                ? 'bg-slate-900/80 border border-sky-500/40'
+                                : 'bg-slate-900/50 border border-slate-800/80'
+                    }">
+                        <span class="text-xs font-bold ${isNow ? 'text-sky-300' : 'text-slate-300'}">
+                            ${isNow ? 'Hozir' : timeStr}
+                        </span>
+
+                        <div class="w-12 h-12 my-2">
+                            ${getWeatherSVG(meta.icon)}
+                        </div>
+
+                        <span class="font-display font-extrabold text-xl text-white">${temp}°</span>
+
+                        <!-- Precipitation Probability Bar -->
+                        <div class="w-full my-2 space-y-1">
+                            <div class="flex items-center justify-between text-[10px]">
+                                <span class="text-slate-400"><i class="fa-solid fa-droplet text-sky-400 mr-0.5"></i>${prob}%</span>
+                                ${precipBadge}
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                <div class="h-full rounded-full ${snowCm > 0 ? 'bg-cyan-300' : 'bg-sky-400'}" style="width: ${Math.max(prob, rainMm > 0 ? 35 : 4)}%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Wind Speed & Mini Direction Arrow -->
+                        <div class="w-full pt-2 border-t border-slate-800/80 flex items-center justify-center gap-1.5 text-[11px] text-emerald-300 font-medium">
+                            <i class="fa-solid fa-location-arrow text-[10px] text-sky-400" style="transform: rotate(${windDeg - 45}deg)"></i>
+                            <span>${windKmh} km/s</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (renderedCount === 0) {
+                container.innerHTML = `
+                    <div class="w-full py-8 text-center text-slate-300 bg-slate-900/40 rounded-2xl border border-slate-800">
+                        <i class="fa-solid fa-sun text-amber-400 text-2xl mb-2"></i>
+                        <p class="text-sm font-semibold">Keyingi 24 soat ichida yomg'ir yoki qor yog'adigan soatlar yo'q!</p>
+                        <p class="text-xs text-slate-400 mt-1">Barcha soatlarni ko'rish uchun "Barcha soatlar (24s)" tugmasini bosing.</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = cardsHTML;
+            }
+        }
+
+        /********************************************************************
+         * 9. RENDER 7-DAY FORECAST
+         ********************************************************************/
+        function renderSevenDayForecast(daily) {
+            const container = document.getElementById('daily-forecast-list');
+            const weekMin = Math.min(...daily.temperature_2m_min);
+            const weekMax = Math.max(...daily.temperature_2m_max);
+            const rangeSpan = Math.max(1, weekMax - weekMin);
+
+            let html = '';
+            for (let i = 0; i < daily.time.length; i++) {
+                const dateObj = new Date(daily.time[i]);
+                const dayName = i === 0 ? "Bugun" : i === 1 ? "Ertaga" : UZ_DAYS[dateObj.getDay()];
+                const dateShort = `${dateObj.getDate()}-${UZ_MONTHS[dateObj.getMonth()].slice(0, 3)}`;
+
+                const wmo = daily.weather_code[i];
+                const meta = getWeatherMetadata(wmo, 1);
+                const tMin = Math.round(daily.temperature_2m_min[i]);
+                const tMax = Math.round(daily.temperature_2m_max[i]);
+                const prob = daily.precipitation_probability_max[i] || 0;
+                const precipSum = (daily.precipitation_sum[i] || 0).toFixed(1);
+                const windMax = Math.round(daily.wind_speed_10m_max[i] || 0);
+
+                const leftPercent = ((tMin - weekMin) / rangeSpan) * 100;
+                const barWidth = Math.max(12, ((tMax - tMin) / rangeSpan) * 100);
+
+                html += `
+                    <div class="py-3 px-2 rounded-2xl hover:bg-slate-900/40 transition grid grid-cols-12 items-center gap-2">
+                        <!-- Day Name -->
+                        <div class="col-span-3 sm:col-span-3">
+                            <p class="text-sm font-bold text-white">${dayName}</p>
+                            <p class="text-[11px] text-slate-400">${dateShort}</p>
+                        </div>
+
+                        <!-- Icon & Condition + Rain Prob -->
+                        <div class="col-span-4 sm:col-span-4 flex items-center gap-2.5">
+                            <div class="w-9 h-9 shrink-0">
+                                ${getWeatherSVG(meta.icon)}
+                            </div>
+                            <div class="truncate">
+                                <p class="text-xs font-semibold text-slate-200 truncate">${meta.label}</p>
+                                <div class="flex items-center gap-2 text-[11px]">
+                                    <span class="${prob >= 30 ? 'text-sky-400 font-bold' : 'text-slate-400'}">
+                                        <i class="fa-solid fa-droplet mr-0.5"></i>${prob}%
+                                    </span>
+                                    ${precipSum > 0 ? `<span class="text-cyan-300">(${precipSum}mm)</span>` : ''}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Temperature Range Bar -->
+                        <div class="col-span-3 sm:col-span-3 flex items-center gap-2">
+                            <span class="text-xs font-semibold text-cyan-300 w-7 text-right">${tMin}°</span>
+                            <div class="flex-1 h-2 bg-slate-800 rounded-full relative overflow-hidden hidden sm:block">
+                                <div class="absolute top-0 bottom-0 rounded-full bg-gradient-to-r from-cyan-400 via-sky-400 to-amber-400"
+                                     style="left: ${leftPercent}%; width: ${barWidth}%;"></div>
+                            </div>
+                            <span class="text-xs font-bold text-amber-300 w-7">${tMax}°</span>
+                        </div>
+
+                        <!-- Max Wind Speed -->
+                        <div class="col-span-2 sm:col-span-2 text-right">
+                            <span class="text-xs font-semibold text-emerald-300 inline-flex items-center gap-1">
+                                <i class="fa-solid fa-wind text-[10px]"></i> ${windMax}
+                            </span>
+                            <p class="text-[10px] text-slate-400">km/soat</p>
+                        </div>
+                    </div>
+                `;
+            }
+            container.innerHTML = html;
+        }
+
+        /********************************************************************
+         * 10. RENDER EXTRA ATMOSPHERIC & SUN METRICS
+         ********************************************************************/
+        function renderExtraMetrics(cur, hourly, daily) {
+            // UV Index
+            const uv = daily.uv_index_max[0] || 0;
+            document.getElementById('metric-uv-val').textContent = uv.toFixed(1);
+            document.getElementById('metric-uv-bar').style.width = `${Math.min(100, (uv / 11) * 100)}%`;
+            const uvBadge = document.getElementById('metric-uv-badge');
+            const uvAdvice = document.getElementById('metric-uv-advice');
+            if (uv < 3) {
+                uvBadge.textContent = "Past";
+                uvBadge.className = "text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300";
+                uvAdvice.textContent = "Quyosh nurlari xavfsiz darajada.";
+            } else if (uv < 6) {
+                uvBadge.textContent = "O'rtacha";
+                uvBadge.className = "text-xs font-bold px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300";
+                uvAdvice.textContent = "Quyosh ko'zoynagi taqish tavsiya etiladi.";
+            } else {
+                uvBadge.textContent = "Yuqori";
+                uvBadge.className = "text-xs font-bold px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300";
+                uvAdvice.textContent = "Tush payti quyosh tig'ida kamroq bo'ling.";
+            }
+
+            // Atmospheric Pressure (hPa + mmHg)
+            const hpa = Math.round(cur.surface_pressure || cur.pressure_msl || 1013);
+            const mmhg = Math.round(hpa * 0.750062);
+            document.getElementById('metric-pressure-mmhg').textContent = mmhg;
+            document.getElementById('metric-pressure-hpa').textContent = `${hpa} gPa (Dengiz sathida: ${Math.round(cur.pressure_msl || hpa)} gPa)`;
+
+            // Visibility
+            const visMeters = hourly.visibility ? hourly.visibility[0] : 10000;
+            const visKm = (visMeters / 1000).toFixed(1);
+            document.getElementById('metric-visibility').textContent = visKm;
+            document.getElementById('metric-visibility-desc').textContent =
+                visKm >= 8 ? "Yo'llarda ko'rinish juda yaxshi va tiniq." : "Tuman yoki yog'in sabab ko'rinish cheklangan.";
+
+            // Daily Precipitation Sum
+            const pSum = (daily.precipitation_sum[0] || 0).toFixed(1);
+            document.getElementById('metric-daily-precip').textContent = pSum;
+            document.getElementById('metric-umbrella-advice').textContent =
+                pSum > 0.5 ? "Bugun soyabon olishni tavsiya qilamiz!" : "Bugun yog'ingarchilik deyarli yo'q.";
+
+            // Sunrise & Sunset
+            if (daily.sunrise && daily.sunset) {
+                const sr = daily.sunrise[0].slice(11, 16);
+                const ss = daily.sunset[0].slice(11, 16);
+                document.getElementById('sunrise-time').textContent = sr;
+                document.getElementById('sunset-time').textContent = ss;
+
+                const srDate = new Date(daily.sunrise[0]);
+                const ssDate = new Date(daily.sunset[0]);
+                const diffHrs = ((ssDate - srDate) / (1000 * 60 * 60)).toFixed(1);
+                document.getElementById('daylight-duration').textContent = `Kun davomiyligi: ${diffHrs} soat`;
+            }
+        }
+
+        /********************************************************************
+         * 11. LIVE CITY SEARCH & AUTOCOMPLETE (Open-Meteo Geocoding API)
+         ********************************************************************/
+        const searchInput = document.getElementById('city-search-input');
+        const searchDropdown = document.getElementById('search-dropdown');
+        const clearSearchBtn = document.getElementById('clear-search-btn');
+        let searchTimeout = null;
+
+        searchInput.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            clearSearchBtn.classList.toggle('hidden', val.length === 0);
+
+            if (val.length < 2) {
+                searchDropdown.classList.add('hidden');
+                return;
+            }
+
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => performCitySearch(val), 280);
+        });
+
+        async function performCitySearch(query) {
+            try {
+                const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=6&language=uz&format=json`);
+                const data = await res.json();
+
+                if (!data.results || data.results.length === 0) {
+                    searchDropdown.innerHTML = `
+                        <div class="p-4 text-xs text-slate-400 text-center">
+                            "${query}" bo'yicha shahar topilmadi. Boshqa nom bilan izlab ko'ring.
+                        </div>
+                    `;
+                    searchDropdown.classList.remove('hidden');
+                    return;
+                }
+
+                searchDropdown.innerHTML = data.results.map(item => `
+                    <button onclick='selectSearchedCity(${JSON.stringify({
+                        name: item.name,
+                        country: item.country || item.admin1 || "",
+                        lat: item.latitude,
+                        lon: item.longitude
+                    }).replace(/'/g, "&apos;")})' class="w-full px-4 py-3 text-left hover:bg-sky-500/20 flex items-center justify-between transition">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-location-dot text-sky-400"></i>
+                            <div>
+                                <p class="text-sm font-bold text-white">${item.name}</p>
+                                <p class="text-xs text-slate-400">${item.admin1 ? item.admin1 + ', ' : ''}${item.country || ''}</p>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-mono text-slate-400">${item.latitude.toFixed(2)}°, ${item.longitude.toFixed(2)}°</span>
+                    </button>
+                `).join('');
+                searchDropdown.classList.remove('hidden');
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function selectSearchedCity(cityObj) {
+            searchDropdown.classList.add('hidden');
+            searchInput.value = cityObj.name;
+            fetchWeatherForCity(cityObj);
+        }
+
+        function clearSearchInput() {
+            searchInput.value = '';
+            clearSearchBtn.classList.add('hidden');
+            searchDropdown.classList.add('hidden');
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!searchInput.contains(e.target) && !searchDropdown.contains(e.target)) {
+                searchDropdown.classList.add('hidden');
+            }
+        });
+
+        /********************************************************************
+         * 12. QUICK CITIES & GPS GEOLOCATION
+         ********************************************************************/
+        function initQuickCities() {
+            const container = document.getElementById('quick-cities-container');
+            container.innerHTML = PRESET_CITIES.map(c => `
+                <button onclick='fetchWeatherForCity(${JSON.stringify(c)})'
+                        data-city="${c.name}"
+                        class="city-chip glass-pill px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-200 shrink-0">
+                    ${c.name}
+                </button>
+            `).join('');
+        }
+
+        function highlightQuickCityChip(cityName) {
+            document.querySelectorAll('.city-chip').forEach(btn => {
+                if (btn.dataset.city === cityName) {
+                    btn.classList.add('active-pill');
+                } else {
+                    btn.classList.remove('active-pill');
+                }
+            });
+        }
+
+        function detectUserLocation() {
+            if (!navigator.geolocation) {
+                showToast("Xabar", "Brauzeringizda GPS funksiyasi mavjud emas", true);
+                return;
+            }
+            showToast("GPS Qidiruv", "Joylashuvingiz aniqlanmoqda...");
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const userCity = {
+                        name: "Mening joylashuvim",
+                        country: "GPS Koordinata",
+                        lat: pos.coords.latitude,
+                        lon: pos.coords.longitude
+                    };
+                    fetchWeatherForCity(userCity);
+                },
+                () => {
+                    showToast("GPS Ruxsat berilmadi", "Joylashuvga ruxsat berilmadi, Toshkent ob-havosi ko'rsatilmoqda", true);
+                }
+            );
+        }
+
+        /********************************************************************
+         * 13. FULL-SCREEN HTML5 CANVAS WEATHER PARTICLE ENGINE (60FPS)
+         ********************************************************************/
+        const canvas = document.getElementById('weather-canvas');
+        const ctx = canvas.getContext('2d');
+        let cw = window.innerWidth;
+        let ch = window.innerHeight;
+
+        let raindrops = [];
+        let splashes = [];
+        let snowflakes = [];
+        let windStreaks = [];
+        let sunMotes = [];
+        let lightningTimer = 0;
+        let activeBolt = null;
+
+        function resizeCanvas() {
+            cw = window.innerWidth;
+            ch = window.innerHeight;
+            canvas.width = cw;
+            canvas.height = ch;
+            initParticles();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        function initParticles() {
+            // Raindrops
+            raindrops = Array.from({ length: 160 }, () => ({
+                x: Math.random() * cw,
+                y: Math.random() * ch,
+                len: 16 + Math.random() * 18,
+                speed: 13 + Math.random() * 9,
+                alpha: 0.25 + Math.random() * 0.45
+            }));
+
+            // Snowflakes
+            snowflakes = Array.from({ length: 130 }, () => ({
+                x: Math.random() * cw,
+                y: Math.random() * ch,
+                r: 1.5 + Math.random() * 4,
+                speedY: 1 + Math.random() * 2.2,
+                phase: Math.random() * Math.PI * 2,
+                alpha: 0.4 + Math.random() * 0.55
+            }));
+
+            // Aerodynamic Wind Streamlines
+            windStreaks = Array.from({ length: 28 }, () => ({
+                x: Math.random() * cw,
+                y: Math.random() * ch,
+                len: 90 + Math.random() * 160,
+                speed: 4 + Math.random() * 7,
+                waveAmp: 4 + Math.random() * 8,
+                phase: Math.random() * Math.PI * 2,
+                alpha: 0.08 + Math.random() * 0.22
+            }));
+
+            // Sunny Golden Motes / Stars
+            sunMotes = Array.from({ length: 65 }, () => ({
+                x: Math.random() * cw,
+                y: Math.random() * ch,
+                r: 1 + Math.random() * 2.5,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: -0.2 - Math.random() * 0.4,
+                alpha: Math.random()
+            }));
+        }
+
+        function setSimulationMode(mode) {
+            appState.simulationMode = mode;
+            document.querySelectorAll('.sim-btn').forEach(btn => {
+                btn.classList.toggle('active-pill', btn.dataset.mode === mode);
+            });
+            updateVisualAtmosphere();
+            if (appState.soundEnabled) updateSynthAudioParameters();
+        }
+
+        function updateVisualAtmosphere() {
+            let effect = 'sunny';
+            if (appState.simulationMode !== 'auto') {
+                effect = appState.simulationMode;
+            } else if (appState.weatherData) {
+                const wmo = appState.weatherData.current.weather_code;
+                const meta = getWeatherMetadata(wmo, appState.isDay);
+                effect = meta.effect;
+                if (appState.windSpeedKmh >= 32 && effect === 'sunny') {
+                    effect = 'wind';
+                }
+            }
+            appState.activeEffect = effect;
+
+            // Update Sky Backdrop Gradient
+            const backdrop = document.getElementById('sky-backdrop');
+            if (effect === 'sunny') {
+                backdrop.style.background = appState.isDay || appState.simulationMode === 'sunny'
+                    ? "radial-gradient(circle at 82% 14%, rgba(250, 204, 21, 0.28), transparent 45%), radial-gradient(circle at 20% 70%, rgba(14, 165, 233, 0.22), transparent 55%), linear-gradient(180deg, #071936 0%, #0c2b59 55%, #0f172a 100%)"
+                    : "radial-gradient(circle at 80% 15%, rgba(99, 102, 241, 0.2), transparent 50%), linear-gradient(180deg, #030712 0%, #091128 60%, #0f172a 100%)";
+            } else if (effect === 'rain' || effect === 'storm') {
+                backdrop.style.background = "radial-gradient(circle at 50% 10%, rgba(56, 189, 248, 0.15), transparent 55%), linear-gradient(180deg, #050b16 0%, #0f1c2e 55%, #090f1d 100%)";
+            } else if (effect === 'snow') {
+                backdrop.style.background = "radial-gradient(circle at 70% 20%, rgba(103, 232, 249, 0.22), transparent 55%), linear-gradient(180deg, #08182b 0%, #112a45 55%, #0b1629 100%)";
+            } else {
+                backdrop.style.background = "radial-gradient(circle at 30% 25%, rgba(16, 185, 129, 0.18), transparent 55%), linear-gradient(180deg, #061423 0%, #0d2138 60%, #091324 100%)";
+            }
+        }
+
+        function createLightningBolt() {
+            const startX = cw * (0.2 + Math.random() * 0.6);
+            let x = startX;
+            let y = 0;
+            const segments = [{ x, y }];
+            while (y < ch * 0.75) {
+                x += (Math.random() - 0.5) * 70;
+                y += 25 + Math.random() * 35;
+                segments.push({ x, y });
+            }
+            activeBolt = { segments, alpha: 1.0 };
+
+            // Flash overlay
+            const overlay = document.getElementById('lightning-overlay');
+            overlay.style.opacity = '0.45';
+            setTimeout(() => { overlay.style.opacity = '0'; }, 90);
+            if (appState.soundEnabled) triggerThunderSound();
+        }
+
+        function animateCanvas() {
+            ctx.clearRect(0, 0, cw, ch);
+            const effect = appState.activeEffect;
+            const effectiveWind = appState.simulationMode === 'wind' ? 52 : (appState.simulationMode === 'storm' ? 42 : appState.windSpeedKmh);
+            const windAngleX = Math.min(10, effectiveWind * 0.18);
+
+            // 1. Always render subtle or strong Wind Streamlines proportional to wind speed
+            const streakCount = effect === 'wind' ? windStreaks.length : Math.min(12, Math.floor(effectiveWind / 3));
+            ctx.lineCap = 'round';
+            for (let i = 0; i < streakCount; i++) {
+                const s = windStreaks[i];
+                const speedMult = effect === 'wind' ? 2.6 : Math.max(0.7, effectiveWind / 15);
+                s.x += s.speed * speedMult;
+                s.phase += 0.05;
+                if (s.x - s.len > cw) {
+                    s.x = -s.len;
+                    s.y = Math.random() * ch;
+                }
+
+                const grad = ctx.createLinearGradient(s.x - s.len, s.y, s.x, s.y);
+                grad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+                grad.addColorStop(0.5, `rgba(56, 189, 248, ${effect === 'wind' ? s.alpha * 1.8 : s.alpha})`);
+                grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+                ctx.strokeStyle = grad;
+                ctx.lineWidth = effect === 'wind' ? 2.2 : 1.2;
+                ctx.beginPath();
+                ctx.moveTo(s.x - s.len, s.y);
+                ctx.quadraticCurveTo(s.x - s.len / 2, s.y + Math.sin(s.phase) * s.waveAmp, s.x, s.y);
+                ctx.stroke();
+            }
+
+            // 2. Sunny / Clear Sky Motes & Sun Rays
+            if (effect === 'sunny' || effect === 'cloudy') {
+                // Warm sun flare in top-right if day or sunny simulation
+                if (appState.isDay || appState.simulationMode === 'sunny') {
+                    const sunGrad = ctx.createRadialGradient(cw * 0.82, ch * 0.14, 10, cw * 0.82, ch * 0.14, 280);
+                    sunGrad.addColorStop(0, 'rgba(253, 224, 71, 0.22)');
+                    sunGrad.addColorStop(0.5, 'rgba(251, 146, 60, 0.07)');
+                    sunGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                    ctx.fillStyle = sunGrad;
+                    ctx.fillRect(0, 0, cw, ch);
+                }
+
+                for (const m of sunMotes) {
+                    m.x += m.vx + windAngleX * 0.05;
+                    m.y += m.vy;
+                    m.alpha += (Math.random() - 0.5) * 0.04;
+                    m.alpha = Math.max(0.15, Math.min(0.85, m.alpha));
+
+                    if (m.y < 0) m.y = ch;
+                    if (m.x > cw) m.x = 0;
+                    if (m.x < 0) m.x = cw;
+
+                    ctx.fillStyle = appState.isDay ? `rgba(253, 224, 71, ${m.alpha * 0.45})` : `rgba(224, 231, 255, ${m.alpha * 0.7})`;
+                    ctx.beginPath();
+                    ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            // 3. Rain & Storm Drops + Splash Ripples
+            if (effect === 'rain' || effect === 'storm') {
+                const count = effect === 'storm' ? raindrops.length : Math.floor(raindrops.length * 0.65);
+                ctx.strokeStyle = 'rgba(125, 211, 252, 0.55)';
+                ctx.lineWidth = effect === 'storm' ? 1.8 : 1.3;
+
+                for (let i = 0; i < count; i++) {
+                    const r = raindrops[i];
+                    r.y += r.speed * (effect === 'storm' ? 1.35 : 1);
+                    r.x += windAngleX;
+
+                    ctx.beginPath();
+                    ctx.moveTo(r.x, r.y);
+                    ctx.lineTo(r.x - windAngleX * 1.3, r.y - r.len);
+                    ctx.stroke();
+
+                    if (r.y > ch - 10) {
+                        if (Math.random() < 0.25 && splashes.length < 45) {
+                            splashes.push({ x: r.x, y: ch - 6, radius: 1, maxR: 6 + Math.random() * 8, alpha: 0.6 });
+                        }
+                        r.y = -20;
+                        r.x = Math.random() * (cw + 200) - 100;
+                    }
+                }
+
+                // Render Splash Ripples
+                for (let i = splashes.length - 1; i >= 0; i--) {
+                    const sp = splashes[i];
+                    sp.radius += 0.45;
+                    sp.alpha -= 0.03;
+                    ctx.strokeStyle = `rgba(125, 211, 252, ${Math.max(0, sp.alpha)})`;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.ellipse(sp.x, sp.y, sp.radius * 1.8, sp.radius * 0.5, 0, 0, Math.PI * 2);
+                    ctx.stroke();
+                    if (sp.alpha <= 0) splashes.splice(i, 1);
+                }
+
+                // Storm Lightning Bolts
+                if (effect === 'storm') {
+                    lightningTimer++;
+                    if (lightningTimer > 130 && Math.random() < 0.035) {
+                        createLightningBolt();
+                        lightningTimer = 0;
+                    }
+                    if (activeBolt) {
+                        ctx.strokeStyle = `rgba(224, 242, 254, ${activeBolt.alpha})`;
+                        ctx.lineWidth = 3;
+                        ctx.shadowColor = '#38bdf8';
+                        ctx.shadowBlur = 20;
+                        ctx.beginPath();
+                        const segs = activeBolt.segments;
+                        ctx.moveTo(segs[0].x, segs[0].y);
+                        for (let k = 1; k < segs.length; k++) {
+                            ctx.lineTo(segs[k].x, segs[k].y);
+                        }
+                        ctx.stroke();
+                        ctx.shadowBlur = 0;
+                        activeBolt.alpha -= 0.08;
+                        if (activeBolt.alpha <= 0) activeBolt = null;
+                    }
+                }
+            }
+
+            // 4. Snowflakes
+            if (effect === 'snow') {
+                for (const s of snowflakes) {
+                    s.phase += 0.025;
+                    s.y += s.speedY;
+                    s.x += Math.sin(s.phase) * 1.4 + windAngleX * 0.4;
+
+                    if (s.y > ch) {
+                        s.y = -10;
+                        s.x = Math.random() * cw;
+                    }
+                    if (s.x > cw) s.x = 0;
+                    if (s.x < 0) s.x = cw;
+
+                    ctx.fillStyle = `rgba(224, 242, 254, ${s.alpha})`;
+                    ctx.beginPath();
+                    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
+            requestAnimationFrame(animateCanvas);
+        }
+
+        /********************************************************************
+         * 14. PROCEDURAL WEB AUDIO API NATURE SOUND SYNTHESIZER
+         *     (Generates realistic Rain / Wind / Thunder audio without MP3 URLs)
+         ********************************************************************/
+        let audioCtx = null;
+        let noiseNode = null;
+        let filterNode = null;
+        let gainNode = null;
+
+        function toggleAmbientSound() {
+            appState.soundEnabled = !appState.soundEnabled;
+
+            const iconDesktop = document.getElementById('sound-icon');
+            const iconMobile = document.getElementById('sound-icon-mobile');
+            const label = document.getElementById('sound-label');
+            const btn = document.getElementById('sound-toggle-btn');
+
+            if (appState.soundEnabled) {
+                startSynthAudio();
+                iconDesktop.className = "fa-solid fa-volume-high text-emerald-400 text-sm";
+                iconMobile.className = "fa-solid fa-volume-high text-emerald-400";
+                label.textContent = "Tabiat ovozi: Yoqiq";
+                btn.classList.add('border-emerald-500/40');
+                showToast("Tabiat ovozi yoqildi", "Ob-havo effektiga mos yomg'ir va shamol ovozi ijro etilmoqda");
+            } else {
+                stopSynthAudio();
+                iconDesktop.className = "fa-solid fa-volume-xmark text-slate-400 text-sm";
+                iconMobile.className = "fa-solid fa-volume-xmark text-slate-400";
+                label.textContent = "Tabiat ovozi: O'chiq";
+                btn.classList.remove('border-emerald-500/40');
+            }
+        }
+
+        function startSynthAudio() {
+            if (!audioCtx) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContextClass();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            // Create 3-second Pink Noise Buffer
+            const bufferSize = audioCtx.sampleRate * 3;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = buffer.getChannelData(0);
+            let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.04;
+                b6 = white * 0.115926;
+            }
+
+            noiseNode = audioCtx.createBufferSource();
+            noiseNode.buffer = buffer;
+            noiseNode.loop = true;
+
+            filterNode = audioCtx.createBiquadFilter();
+            gainNode = audioCtx.createGain();
+
+            noiseNode.connect(filterNode);
+            filterNode.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            noiseNode.start();
+            updateSynthAudioParameters();
+        }
+
+        function updateSynthAudioParameters() {
+            if (!filterNode || !gainNode || !audioCtx) return;
+            const effect = appState.activeEffect;
+            const now = audioCtx.currentTime;
+
+            if (effect === 'rain' || effect === 'storm') {
+                filterNode.type = 'bandpass';
+                filterNode.frequency.setTargetAtTime(effect === 'storm' ? 950 : 1200, now, 0.3);
+                filterNode.Q.setTargetAtTime(0.7, now, 0.3);
+                gainNode.gain.setTargetAtTime(effect === 'storm' ? 0.35 : 0.22, now, 0.3);
+            } else if (effect === 'wind' || effect === 'snow') {
+                filterNode.type = 'lowpass';
+                filterNode.frequency.setTargetAtTime(340, now, 0.4);
+                filterNode.Q.setTargetAtTime(3.0, now, 0.4);
+                gainNode.gain.setTargetAtTime(0.25, now, 0.4);
+            } else {
+                // Gentle breeze
+                filterNode.type = 'lowpass';
+                filterNode.frequency.setTargetAtTime(240, now, 0.4);
+                gainNode.gain.setTargetAtTime(0.08, now, 0.4);
+            }
+        }
+
+        function triggerThunderSound() {
+            if (!audioCtx || !appState.soundEnabled) return;
+            const osc = audioCtx.createOscillator();
+            const thGain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(95, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(28, audioCtx.currentTime + 1.4);
+
+            thGain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            thGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+
+            osc.connect(thGain);
+            thGain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 1.5);
+        }
+
+        function stopSynthAudio() {
+            if (noiseNode) {
+                try { noiseNode.stop(); } catch (e) {}
+                noiseNode.disconnect();
+                noiseNode = null;
+            }
+        }
+
+        /********************************************************************
+         * 15. LIVE DIGITAL CLOCK & TOAST NOTIFICATIONS
+         ********************************************************************/
+        function updateClock() {
+            try {
+                const now = new Date();
+                const timeFormatter = new Intl.DateTimeFormat('uz-UZ', {
+                    timeZone: appState.timezone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                document.getElementById('live-clock').textContent = timeFormatter.format(now);
+
+                const dayName = UZ_DAYS[now.getDay()];
+                const monthName = UZ_MONTHS[now.getMonth()];
+                document.getElementById('live-date').textContent = `${dayName}, ${now.getDate()}-${monthName}`;
+            } catch (e) {
+                const d = new Date();
+                document.getElementById('live-clock').textContent = d.toTimeString().slice(0, 8);
+            }
+        }
+
+        let toastTimer = null;
+        function showToast(title, message, isWarning = false) {
+            const box = document.getElementById('toast-box');
+            const titleEl = document.getElementById('toast-title');
+            const msgEl = document.getElementById('toast-msg');
+            const iconEl = document.getElementById('toast-icon');
+
+            titleEl.textContent = title;
+            msgEl.textContent = message;
+
+            if (isWarning) {
+                box.classList.replace('border-sky-400', 'border-amber-400');
+                iconEl.className = "w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0";
+            } else {
+                box.classList.replace('border-amber-400', 'border-sky-400');
+                iconEl.className = "w-9 h-9 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center shrink-0";
+            }
+
+            box.classList.remove('translate-x-full', 'opacity-0');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                box.classList.add('translate-x-full', 'opacity-0');
+            }, 3400);
+        }
+
+        /********************************************************************
+         * 16. INITIALIZATION ON WINDOW LOAD
+         ********************************************************************/
+        window.onload = function () {
+            resizeCanvas();
+            initQuickCities();
+            updateClock();
+            setInterval(updateClock, 1000);
+
+            // Start 60FPS Weather Particle Loop
+            animateCanvas();
+
+            // Fetch real weather for default city (Toshkent)
+            fetchWeatherForCity(PRESET_CITIES[0]);
+        };
+    </script>
+</body>
+</html>
